@@ -1,0 +1,7 @@
+me: postgres
+description: PostgreSQL database with credentials
+required_inputs:
+  - POSTGRES_USER
+  - POSTGRES_PASSWORD
+  - POSTGRES_DB
+
