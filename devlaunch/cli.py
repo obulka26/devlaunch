@@ -2,11 +2,28 @@ import typer
 import os
 import subprocess
 from devlaunch.generator import generate_file
+from typing import List
+from typing_extensions import Annotated
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 
 TEMPLATES_DIR = os.path.join(os.getcwd(), "templates", "scaffolds")
 PROJECTS_DIR = os.path.join(os.getcwd(), "projects")
+
+SAFE_FLAGS = {"--build", "--detach", "-d", "--no-color", "--quiet-pull"}
+
+DANGEROUS_FLAGS = {
+    "--force-recreate",
+    "--remove-orphans",
+    "--renew-anon-volumes",
+    "--abort-on-container-exit",
+    "--abort-on-container-failure",
+    "--no-start",
+    "--no-deps",
+    "--scale",
+    "--exit-code-from",
+    "--pull=always",
+}
 
 
 @app.command()
@@ -29,86 +46,76 @@ def generate(template: str):
     generate_file(template)
 
 
-DEVLUANCH_UP_HELP = """
-Usage:  devlaunch up NAME [OPTIONS]
-
-Create and start containers (wraps docker-compose)
-
-Options:
-      --abort-on-container-exit      Stops all containers if any container was stopped. Incompatible with -d
-      --abort-on-container-failure   Stops all containers if any container exited with failure. Incompatible with -d
-      --always-recreate-deps         Recreate dependent containers. Incompatible with --no-recreate.
-      --attach stringArray           Restrict attaching to the specified services. Incompatible with --attach-dependencies.
-      --attach-dependencies          Automatically attach to log output of dependent services
-      --build                        Build images before starting containers
-  -d, --detach                       Detached mode: Run containers in the background
-      --dry-run                      Execute command in dry run mode
-      --exit-code-from string        Return the exit code of the selected service container. Implies --abort-on-container-exit
-      --force-recreate               Recreate containers even if their configuration and image haven't changed
-      --menu                         Enable interactive shortcuts when running attached. Incompatible with --detach. Can also be enable/disable by setting COMPOSE_MENU environment var.
-      --no-attach stringArray        Do not attach (stream logs) to the specified services
-      --no-build                     Don't build an image, even if it's policy
-      --no-color                     Produce monochrome output
-      --no-deps                      Don't start linked services
-      --no-log-prefix                Don't print prefix in logs
-      --no-recreate                  If containers already exist, don't recreate them. Incompatible with --force-recreate.
-      --no-start                     Don't start the services after creating them
-      --pull string                  Pull image before running ("always"|"missing"|"never") (default "policy")
-      --quiet-pull                   Pull without printing progress information
-      --remove-orphans               Remove containers for services not defined in the Compose file
-  -V, --renew-anon-volumes           Recreate anonymous volumes instead of retrieving data from the previous containers
-      --scale scale                  Scale SERVICE to NUM instances. Overrides the scale setting in the Compose file if present.
-  -t, --timeout int                  Use this timeout in seconds for container shutdown when attached or when containers are already running
-      --timestamps                   Show timestamps
-      --wait                         Wait for services to be running|healthy. Implies detached mode.
-      --wait-timeout int             Maximum duration to wait for the project to be running|healthy
-  -w, --watch                        Watch source code and rebuild/refresh containers when files are updated.
-"""
-
-SAFE_FLAGS = {"--build", "--detach", "-d", "--no-color", "--quiet-pull"}
-
-DANGEROUS_FLAGS = {
-    "--force-recreate",
-    "--remove-orphans",
-    "--renew-anon-volumes",
-    "--abort-on-container-exit",
-    "--abort-on-container-failure",
-    "--no-start",
-    "--no-deps",
-    "--scale",
-    "--exit-code-from",
-    "--pull=always",
-}
-
-
 @app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
-def up(ctx: typer.Context):
-    args = list(ctx.args)
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+    help="""
+[bold cyan]Create and start containers[/bold cyan] (wraps [italic]docker-compose[/italic])
 
-    if "--help" in args or "-h" in args or len(args) == 0:
-        typer.echo(DEVLUANCH_UP_HELP)
-        raise typer.Exit()
+Use `[green]--unsafe[/green]` to allow potentially dangerous flags.
+
+[underline]Common Options[/underline]:
+- [bold]--build[/bold]: Build images before starting containers
+- [bold]-d, --detach[/bold]: Run containers in background (detached mode)
+- [bold]--no-color[/bold]: Produce monochrome output
+- [bold]--quiet-pull[/bold]: Pull without printing progress
+- [bold]--dry-run[/bold]: Execute command in dry run mode
+- [bold]--menu[/bold]: Enable interactive shortcuts when attached (incompatible with --detach)
+- [bold]--no-attach[/bold] [stringArray]: Do not attach (stream logs) to specified services
+- [bold]--attach[/bold] [stringArray]: Attach only to specified services (incompatible with --attach-dependencies)
+- [bold]--attach-dependencies[/bold]: Attach to log output of dependent services automatically
+- [bold]--no-build[/bold]: Don't build images even if policy requires
+- [bold]--no-log-prefix[/bold]: Don't print prefix in logs
+- [bold]--timeout, -t[/bold] [int]: Timeout (seconds) for container shutdown/startup
+- [bold]--timestamps[/bold]: Show timestamps in logs
+- [bold]--wait[/bold]: Wait for services to be running or healthy (implies detached mode)
+- [bold]--wait-timeout[/bold] [int]: Max wait duration for services to be running/healthy
+- [bold]-w, --watch[/bold]: Watch source code and rebuild/refresh containers on file changes
+
+[red]Dangerous Flags[/red] (require --unsafe):
+- --force-recreate: Recreate containers even if config/image unchanged (incompatible with --no-recreate)
+- --remove-orphans: Remove containers not defined in the Compose file
+- -V, --renew-anon-volumes: Recreate anonymous volumes instead of reusing old data
+- --abort-on-container-exit: Stop all containers if any container stops (incompatible with -d)
+- --abort-on-container-failure: Stop all containers if any container exited with failure (incompatible with -d)
+- --no-deps: Do not start linked/dependent services
+- --no-start: Don't start containers after creating them
+- --scale [SERVICE=NUM]: Scale SERVICE to NUM instances (overrides Compose file scale)
+- --exit-code-from [SERVICE]: Return exit code from specified service container (implies --abort-on-container-exit)
+- --pull [always|missing|never]: Pull image before running (default "policy")
+
+[bold cyan]Create and start containers[/bold cyan] (wraps [italic]docker-compose[/italic])
+""",
+)
+def up(
+    ctx: typer.Context,
+    extra_args: Annotated[
+        List[str],
+        typer.Argument(
+            ...,
+            help="[italic]NAME[/italic] of the project and any docker-compose flags.",
+        ),
+    ],
+):
+    args = list(extra_args)
 
     name = None
-    extra_args = []
+    cleaned_args = []
     for arg in args:
         if name is None and not arg.startswith("-"):
             name = arg
         else:
-            extra_args.append(arg)
+            cleaned_args.append(arg)
 
     if name is None:
         typer.echo("[!] Project name not specified.")
         raise typer.Exit(1)
 
-    unsafe_mode = "--unsafe" in extra_args
+    unsafe_mode = "--unsafe" in cleaned_args
     if unsafe_mode:
-        extra_args.remove("--unsafe")
+        cleaned_args.remove("--unsafe")
 
     if not unsafe_mode:
-        for arg in extra_args:
+        for arg in cleaned_args:
             flag = arg.split("=")[0]
             if flag not in SAFE_FLAGS:
                 typer.echo(
@@ -126,7 +133,7 @@ def up(ctx: typer.Context):
             print(f"[!] docker-compose.yml for '{name}' not found.")
             raise typer.Exit(1)
 
-    command = ["docker-compose", "-f", project_path, "up"] + extra_args
+    command = ["docker-compose", "-f", project_path, "up"] + cleaned_args
     subprocess.run(command)
 
 
