@@ -1,9 +1,11 @@
 import typer
 import os
 import subprocess
-from devlaunch.generator import generate_file
+from devlaunch.generator import generate_file, create_from_prompt
 from typing import List
 from typing_extensions import Annotated
+from devlaunch.loader import find_template
+
 
 app = typer.Typer(rich_markup_mode="rich")
 
@@ -151,7 +153,20 @@ def stop(name: str):
 
 @app.command()
 def prompt():
-    pass
+    user_input = input("🧠 What do you want to build?\n> ").strip()
+    template = find_template(user_input)
+
+    if template:
+        print(f"\n✅ Template found: {template}")
+        print("👉 To use it, run:")
+        print(f"   devlaunch load {template}")
+        print(f"   devlaunch up {template}")
+    else:
+        print(f"\n❌ No matching template found for: '{user_input}'")
+        confirm = input("🚀 Generate a new one locally? [y/N] ").strip().lower()
+        if confirm == "y":
+            create_from_prompt(user_input)
+            print("\n✅ Project generated. Use `up <name>` to run.")
 
 
 @app.command()
