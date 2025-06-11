@@ -1,6 +1,9 @@
 import os
 import yaml
+import openai
 from jinja2 import Template
+from pathlib import Path
+
 
 TEMPLATES_DIR = os.path.join(os.getcwd(), "templates", "scaffolds")
 PROJECTS_DIR = os.path.join(os.getcwd(), "projects")
@@ -46,3 +49,23 @@ def generate_file(template: str):
         f.write(rendered)
 
     print(f"[+] Generated docker-compose.yml at: {output_path}")
+
+
+def query_llm_for_template(prompt: str) -> str:
+    system_prompt = """You are a DevOps assistant that maps user requests to internal template names.
+For example:
+- 'I want a PostgreSQL database' => 'postgres'
+- 'Simple nginx proxy server' => 'ngnix'
+- 'I want to deploy Redis cluster' => 'redis'
+
+Return ONLY the template folder name like 'postgres', 'ngnix', or 'redis'.
+If unsure, return your best guess."""
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",  # або gpt-3.5-turbo
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    return response["choices"][0]["message"]["content"].strip()
