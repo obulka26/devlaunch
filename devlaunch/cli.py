@@ -166,7 +166,10 @@ def prompt():
         confirm = input("🚀 Generate a new one locally? [y/N] ").strip().lower()
         if confirm == "y":
             create_from_prompt(user_input)
-            print("\n✅ Project generated. Use `up <name>` to run.")
+            print("\n✅ Project generated.")
+            print("👉 Use:")
+            print(f"   devlaunch generate {template}")
+            print(f"   devlaunch up {template}")
 
 
 @app.command()

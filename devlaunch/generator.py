@@ -1,8 +1,7 @@
 import os
 import yaml
-import openai
 from jinja2 import Template
-from pathlib import Path
+from devlaunch.llm import query_llm
 
 
 TEMPLATES_DIR = os.path.join(os.getcwd(), "templates", "scaffolds")
@@ -51,21 +50,40 @@ def generate_file(template: str):
     print(f"[+] Generated docker-compose.yml at: {output_path}")
 
 
-def query_llm_for_template(prompt: str) -> str:
-    system_prompt = """You are a DevOps assistant that maps user requests to internal template names.
-For example:
-- 'I want a PostgreSQL database' => 'postgres'
-- 'Simple nginx proxy server' => 'ngnix'
-- 'I want to deploy Redis cluster' => 'redis'
+def create_from_prompt(prompt: str):
+    response = query_llm(prompt)
 
-Return ONLY the template folder name like 'postgres', 'ngnix', or 'redis'.
-If unsure, return your best guess."""
+    if "---END_METADATA---" not in response:
+        print("❌ LLM response missing metadata separator.")
+        return
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",  # або gpt-3.5-turbo
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ],
-    )
-    return response["choices"][0]["message"]["content"].strip()
+    template_part, metadata_part = response.split("---END_METADATA---", 1)
+
+    try:
+        metadata = yaml.safe_load(metadata_part)
+    except Exception as e:
+        print("❌ Failed to parse metadata YAML:", e)
+        return
+
+    short_name = metadata.get("me")
+    if not short_name:
+        print("❌ Metadata missing 'me' (short name).")
+        return
+
+    template_dir = os.path.join(TEMPLATES_DIR, short_name)
+
+    if not os.path.isdir(template_dir):
+        raise FileNotFoundError(
+            f"❌ Template '{short_name}' not found in {TEMPLATES_DIR}.\n"
+            "👉 Try running 'devlaunch list-templates' to see available scaffolds."
+        )
+
+    j2_path = os.path.join(template_dir, "docker-compose.j2")
+    with open(j2_path, "w") as f:
+        f.write(template_part.strip())
+
+    yaml_path = os.path.join(template_dir, "template.yaml")
+    with open(yaml_path, "w") as f:
+        yaml.dump(metadata, f)
+
+    print(f"✅ Template '{short_name}' created in templates/scaffolds/")

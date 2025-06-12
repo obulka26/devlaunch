@@ -1,0 +1,4 @@
+llm_config: local
+local_model: llama3
+ollama_url: http://localhost:11434/api/generate
+
