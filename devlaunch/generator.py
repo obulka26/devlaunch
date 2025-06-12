@@ -52,6 +52,7 @@ def generate_file(template: str):
 
 def create_from_prompt(prompt: str):
     response = query_llm(prompt)
+    print("📝 Raw output:\n", response)
 
     if "---END_METADATA---" not in response:
         print("❌ LLM response missing metadata separator.")
@@ -65,18 +66,14 @@ def create_from_prompt(prompt: str):
         print("❌ Failed to parse metadata YAML:", e)
         return
 
-    short_name = metadata.get("me")
+    short_name = input("Short name for template (directory name): ").strip()
+
     if not short_name:
-        print("❌ Metadata missing 'me' (short name).")
+        print("❌ Short name cannot be empty.")
         return
 
     template_dir = os.path.join(TEMPLATES_DIR, short_name)
-
-    if not os.path.isdir(template_dir):
-        raise FileNotFoundError(
-            f"❌ Template '{short_name}' not found in {TEMPLATES_DIR}.\n"
-            "👉 Try running 'devlaunch list-templates' to see available scaffolds."
-        )
+    os.makedirs(template_dir, exist_ok=True)
 
     j2_path = os.path.join(template_dir, "docker-compose.j2")
     with open(j2_path, "w") as f:
