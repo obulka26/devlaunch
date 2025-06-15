@@ -34,8 +34,8 @@ DANGEROUS_FLAGS = {
 }
 
 
-@app.command()
-def ls(show: str = typer.Option("all", help="templates, projects, or all")):
+@app.command(help="📦 List available templates and/or existing projects")
+def ls(show: str = typer.Option("all")):
     if show in ("all", "templates"):
         print("\n[📦] Available Templates:")
         for name in os.listdir(TEMPLATES_DIR):
@@ -49,15 +49,17 @@ def ls(show: str = typer.Option("all", help="templates, projects, or all")):
                 print(" -", name)
 
 
-@app.command()
+@app.command(help="🧱 Generate files from a specified template name")
 def generate(template: str):
     generate_file(template)
 
 
 @app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+    context_settings={"allow_extra_args": True,
+                      "ignore_unknown_options": True},
     help="""
-[bold cyan]Create and start containers[/bold cyan] (wraps [italic]docker-compose[/italic])
+
+🚀 [bold cyan]Create and start containers[/bold cyan] (wraps [italic]docker-compose[/italic])
 
 Use `[green]--unsafe[/green]` to allow potentially dangerous flags.
 
@@ -145,7 +147,7 @@ def up(
     subprocess.run(command)
 
 
-@app.command()
+@app.command(help="🛑 Stop running containers for a given project")
 def stop(name: str):
     project_path = os.path.join(PROJECTS_DIR, name, "docker-compose.yml")
     if not os.path.exists(project_path):
@@ -239,7 +241,8 @@ def prompt():
 
 @app.command(help="⚙️ Configure your LLM provider for DevLaunch (OpenRouter or local)")
 def configure():
-    typer.echo("🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")
+    typer.echo(
+        "🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")
     choice = input("Enter 1 or 2: ").strip()
     config = {}
 
@@ -275,12 +278,14 @@ def configure():
     typer.echo(f"✅ Config saved to {CONFIG_PATH}")
 
 
-@app.command()
+@app.command(help="📥 Download project resources (feature not implemented yet)")
 def download():
     pass
 
 
-@app.command()
+@app.command(
+    help="🧹 Clean up generated files or temporary data (feature not implemented yet)"
+)
 def clean():
     pass
 
