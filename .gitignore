@@ -11,3 +11,4 @@ build/
 .venv/
 env/
 
+*.llm_config.yaml

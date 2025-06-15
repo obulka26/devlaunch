@@ -1,11 +1,14 @@
 # llm.py
 import yaml
 from pathlib import Path
-import openai
 import requests
 import subprocess
 
 # CONFIG_PATH = Path.home() / ".llm_config.yaml"
+
+CONFIG_PATH = Path(
+    "~/my_studies/pet_projects/devlaunch/devlaunch/.llm_config.yaml"
+).expanduser()
 
 
 SYSTEM_PROMPT = """You are a DevOps assistant. 
@@ -37,19 +40,25 @@ def load_config():
     return {}
 
 
-def query_openai(prompt: str, api_key) -> str:
-    if not api_key:
-        raise ValueError("No OpenAI API key provided")
-
-    openai.api_key = api_key
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
+def query_openrouter(prompt: str, api_key: str, model: str) -> str:
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://yourapp.com",
+        "X-Title": "DevLaunch",
+    }
+    body = {
+        "model": model,
+        "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
-    )
-    return response["choices"][0]["message"]["content"].strip()
+    }
+
+    response = requests.post(url, json=body, headers=headers)
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"].strip()
 
 
 def check_ollama_installed():
@@ -75,26 +84,24 @@ def query_llm(prompt: str) -> str:
     provider = config.get("llm_config")
 
     if not provider:
-        raise Exception(
-            "❌ No LLM provider specified in config (.llm_config.yaml)")
+        raise Exception("❌ No LLM provider specified in config (.llm_config.yaml)")
 
-    if provider == "openai":
-        api_key = config.get("open_ai_key")
+    if provider == "openrouter":
+        api_key = config.get("openrouter_ai_key")
         if not api_key:
             raise Exception("❌ No OpenAI API key found in config.")
-        return query_openai(prompt, api_key)
+        model = config.get("openrouter_model", "openai/gpt-3.5-turbo")
+        return query_openrouter(prompt, api_key, model)
 
     elif provider == "local":
         model = config.get("local_model")
         if not model:
-            raise Exception(
-                "❌ No local model specified in config (local_model).")
+            raise Exception("❌ No local model specified in config (local_model).")
         url = config.get("ollama_url")
         if not url:
             raise Exception("❌ No local url specified in config (ollama_url).")
         if not check_ollama_installed():
-            raise Exception(
-                "❌ Ollama is not installed. Please install it first.")
+            raise Exception("❌ Ollama is not installed. Please install it first.")
         return query_local(prompt, model, url)
 
     else:
