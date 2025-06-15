@@ -87,7 +87,7 @@ def query_llm(prompt: str) -> str:
         raise Exception("❌ No LLM provider specified in config (.llm_config.yaml)")
 
     if provider == "openrouter":
-        api_key = config.get("openrouter_ai_key")
+        api_key = config.get("openrouter_api_key")
         if not api_key:
             raise Exception("❌ No OpenAI API key found in config.")
         model = config.get("openrouter_model", "openai/gpt-3.5-turbo")
