@@ -151,7 +151,66 @@ def stop(name: str):
     subprocess.run(["docker-compose", "-f", project_path, "stop"])
 
 
-@app.command()
+@app.command(
+    help="""
+[bold cyan]🤖 LLM (Large Language Model) Assistant Help[/bold cyan]
+
+This command uses an AI model to generate [green]DevOps infrastructure templates[/green] based on your prompt.
+
+To use this feature, you must configure [bold]one[/bold] of the two available providers:
+
+[bold][1] 🌐 OpenRouter (Remote API)[/bold]
+[dim]- Ideal for users who want access to various models hosted in the cloud.[/dim]
+• Go to: [link=https://openrouter.ai]https://openrouter.ai[/link]
+• Create an account and generate an API key
+• Pick a model from: [link=https://openrouter.ai/models]https://openrouter.ai/models[/link]
+• Configure your ~/.llm_config.yaml like this:
+
+    llm_config: openrouter
+    openrouter_api_key: YOUR_API_KEY
+    openrouter_model: YOUR_MODEL_NAME  # ← Choose any available model
+
+[italic yellow]⚠ Some models are paid! Even without a credit card, usage may consume free credits.[/italic yellow]
+
+[bold][2] 🖥️ Ollama (Local Inference)[/bold]
+[dim]- Ideal for offline use, but requires system resources.[/dim]
+• Download and install from: [link=https://ollama.com]https://ollama.com[/link]
+• Make sure Ollama is running
+• Use this config:
+
+    llm_config: local
+    local_model: llama3
+    ollama_url: http://localhost:11434/api/generate
+
+• You can install models manually with:
+    [italic]ollama run llama3[/italic]
+
+[italic yellow]⚠ Local models may require 4–8+ GB RAM or more.[/italic yellow]
+
+---
+
+[bold green]🛠️ Automatic Setup:[/bold green]
+Run [bold]devlaunch configure[/bold] to auto-generate your ~/.llm_config.yaml
+
+Or create/edit manually.
+
+---
+
+[bold magenta]🧠 Model Quality Matters[/bold magenta]
+Some models generate better infrastructure than others. Try different ones and update your config as needed.
+
+Suggested models to test (to be filled by you):
+ • ...
+
+---
+
+[bold cyan]Once configured, just run:[/bold cyan]
+
+    devlaunch prompt
+
+...and start generating scaffolds with AI!
+"""
+)
 def prompt():
     user_input = input("🧠 What do you want to build?\n> ").strip()
     template = find_template(user_input)
