@@ -6,6 +6,10 @@ import subprocess
 
 # CONFIG_PATH = Path.home() / ".llm_config.yaml"
 
+CONFIG_PATH = Path(
+    "~/my_studies/pet_projects/devlaunch/devlaunch/.llm_config.yaml"
+).expanduser()
+
 
 SYSTEM_PROMPT = """You are a DevOps assistant. 
 Your task is to return infrastructure templates based on user requests.
@@ -80,8 +84,7 @@ def query_llm(prompt: str) -> str:
     provider = config.get("llm_config")
 
     if not provider:
-        raise Exception(
-            "❌ No LLM provider specified in config (.llm_config.yaml)")
+        raise Exception("❌ No LLM provider specified in config (.llm_config.yaml)")
 
     if provider == "openrouter":
         api_key = config.get("openrouter_api_key")
@@ -93,14 +96,12 @@ def query_llm(prompt: str) -> str:
     elif provider == "local":
         model = config.get("local_model")
         if not model:
-            raise Exception(
-                "❌ No local model specified in config (local_model).")
+            raise Exception("❌ No local model specified in config (local_model).")
         url = config.get("ollama_url")
         if not url:
             raise Exception("❌ No local url specified in config (ollama_url).")
         if not check_ollama_installed():
-            raise Exception(
-                "❌ Ollama is not installed. Please install it first.")
+            raise Exception("❌ Ollama is not installed. Please install it first.")
         return query_local(prompt, model, url)
 
     else:

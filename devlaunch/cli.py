@@ -1,16 +1,22 @@
 import typer
 import os
 import subprocess
+import yaml
 from devlaunch.generator import generate_file, create_from_prompt
 from typing import List
 from typing_extensions import Annotated
 from devlaunch.loader import find_template
+from pathlib import Path
 
 
 app = typer.Typer(rich_markup_mode="rich")
 
 TEMPLATES_DIR = os.path.join(os.getcwd(), "templates", "scaffolds")
 PROJECTS_DIR = os.path.join(os.getcwd(), "projects")
+
+CONFIG_PATH = Path(
+    "~/my_studies/pet_projects/devlaunch/devlaunch/.llm_config.yaml"
+).expanduser()
 
 SAFE_FLAGS = {"--build", "--detach", "-d", "--no-color", "--quiet-pull"}
 
@@ -231,6 +237,44 @@ def prompt():
             print(f"   devlaunch up {template}")
 
 
+@app.command(help="⚙️ Configure your LLM provider for DevLaunch (OpenRouter or local)")
+def configure():
+    typer.echo("🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")
+    choice = input("Enter 1 or 2: ").strip()
+    config = {}
+
+    if choice == "1":
+        config["llm_config"] = "openrouter"
+        config["openrouter_api_key"] = input(
+            "🔑 Enter your OpenRouter API key: "
+        ).strip()
+        config["openrouter_model"] = input(
+            "🤖 Enter your preferred model (e.g. openai/gpt-3.5-turbo): "
+        ).strip()
+
+    elif choice == "2":
+        config["llm_config"] = "local"
+        config["local_model"] = input(
+            "🤖 Enter your local model name (e.g. llama3): "
+        ).strip()
+        config["ollama_url"] = (
+            input(
+                "🌐 Enter Ollama URL (default: http://localhost:11434/api/generate): "
+            ).strip()
+            or "http://localhost:11434/api/generate"
+        )
+
+    else:
+        typer.echo("❌ Invalid choice. Aborting.")
+        raise typer.Exit(1)
+
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_PATH, "w") as f:
+        yaml.dump(config, f)
+
+    typer.echo(f"✅ Config saved to {CONFIG_PATH}")
+
+
 @app.command()
 def download():
     pass
@@ -242,4 +286,7 @@ def clean():
 
 
 if __name__ == "__main__":
+    app()
+    app()
+    app()
     app()
