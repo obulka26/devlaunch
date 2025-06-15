@@ -1,4 +1,0 @@
-llm_config: local
-local_model: nous-hermes2
-ollama_url: http://localhost:11434/api/generate
-
