@@ -46,7 +46,10 @@ resource "aws_s3_bucket_policy" "ec2_only_access" {
         Sid    = "AllowEC2RoleReadOnly"
         Effect = "Allow"
         Principal = {
-          AWS = [aws_iam_role.ec2_role.arn, data.aws_caller_identity.arn]
+          AWS = [
+            aws_iam_role.ec2_role.arn,
+            data.aws_caller_identity.current.arn
+          ]
         }
         Action = [
           "s3:GetObject",
@@ -77,7 +80,6 @@ resource "aws_instance" "api_instance" {
   instance_type        = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   key_name             = var.key_name
-  user_data            = file("bootstrap.sh")
 
   tags = {
     Name = "devlaunch-api"
