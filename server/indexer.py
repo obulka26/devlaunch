@@ -24,10 +24,8 @@ def fetch_and_parse_template(key):
     content = response["Body"].read()
     data = yaml.safe_load(content)
 
-    required_keys = ["name", "description", "required_inputs", "tags"]
-    for k in required_keys:
-        if k not in data:
-            raise ValueError(f"Missing {k} in {key}")
+    if "tags" not in data:
+        raise ValueError(f"Missing 'tags' in {key}")
 
     data["url"] = key
     return data
