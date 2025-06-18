@@ -1,5 +1,7 @@
-me: postgres
+name: postgres
 description: PostgreSQL database with credentials
+tags:
+  - postgres
 required_inputs:
   - POSTGRES_USER
   - POSTGRES_PASSWORD
