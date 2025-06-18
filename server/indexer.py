@@ -1,7 +1,7 @@
 import boto3
 import yaml
 
-BUCKET_NAME = ""
+BUCKET_NAME = "devlaunch-templates-bucket"
 INDEX_OUTPUT_KEY = "index.yaml"
 TAGS_OUTPUT_KEY = "tags.yaml"
 
@@ -27,8 +27,10 @@ def fetch_and_parse_template(key):
     if "tags" not in data:
         raise ValueError(f"Missing 'tags' in {key}")
 
-    data["url"] = key
-    return data
+      return {
+        "tags": data["tags"],
+        "url": key
+    }
 
 
 def upload_file(key, data):
