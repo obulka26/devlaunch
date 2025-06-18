@@ -12,3 +12,11 @@ build/
 env/
 
 *.llm_config.yaml
+
+# Terraform files
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+tfplan
+
