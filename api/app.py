@@ -60,8 +60,6 @@ def resolve():
 
     return jsonify({"matched": None})
 
-    return jsonify({"matched": None})
-
 
 if __name__ == "__main__":
     app.run(debug=True)

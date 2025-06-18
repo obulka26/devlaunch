@@ -5,8 +5,8 @@ import yaml
 from devlaunch.generator import generate_file, create_from_prompt
 from typing import List
 from typing_extensions import Annotated
-from devlaunch.loader import find_template
 from pathlib import Path
+from devlaunch.loader import download_template_logic
 
 
 app = typer.Typer(rich_markup_mode="rich")
@@ -56,7 +56,7 @@ def generate(template: str):
 
 @app.command(
     context_settings={"allow_extra_args": True,
-                      "ignore_unknown_options": True},
+        "ignore_unknown_options": True},
     help="""
 
 🚀 [bold cyan]Create and start containers[/bold cyan] (wraps [italic]docker-compose[/italic])
@@ -221,7 +221,7 @@ Suggested models to test (to be filled by you):
 )
 def prompt():
     user_input = input("🧠 What do you want to build?\n> ").strip()
-    template = find_template(user_input)
+    template = download_template_logic(user_input)
 
     if template:
         print(f"\n✅ Template found: {template}")
@@ -242,8 +242,7 @@ def prompt():
 @app.command(help="⚙️ Configure your LLM provider for DevLaunch (OpenRouter or local)")
 def configure():
     typer.echo(
-        "🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")
-    choice = input("Enter 1 or 2: ").strip()
+        "🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")    choice = input("Enter 1 or 2: ").strip()
     config = {}
 
     if choice == "1":
@@ -278,9 +277,14 @@ def configure():
     typer.echo(f"✅ Config saved to {CONFIG_PATH}")
 
 
-@app.command(help="📥 Download project resources (feature not implemented yet)")
+@app.command(help="📥 Download project resources  
 def download():
-    pass
+    try:
+        path = download_template_logic(prompt)
+        typer.secho(f"[✔] Template saved in {path}", fg=typer.colors.GREEN)
+    except Exception as e:
+        typer.secho(f"[!] Error: {str(e)}", fg=typer.colors.RED)
+        raise typer.Exit(1)
 
 
 @app.command(
@@ -291,4 +295,5 @@ def clean():
 
 
 if __name__ == "__main__":
+    app()
     app()
