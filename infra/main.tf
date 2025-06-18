@@ -1,5 +1,5 @@
 provider "aws" {
-  region = ""
+  region = "eu-central-1"
 }
 
 resource "aws_s3_bucket" "templates_bucket" {
@@ -65,30 +65,84 @@ resource "aws_s3_bucket_policy" "ec2_only_access" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+resource "aws_iam_policy" "ec2_s3_write_policy" {
+  name        = "ec2-s3-write-policy"
+  description = "Allow EC2 to read and write to the devlaunch S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          aws_s3_bucket.templates_bucket.arn,
+          "${aws_s3_bucket.templates_bucket.arn}/*"
+        ]
+      }
+    ]
+  })
 }
+
+resource "aws_iam_role_policy_attachment" "attach_s3_write_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.ec2_s3_write_policy.arn
+}
+
+#resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
+#  role       = aws_iam_role.ec2_role.name
+#  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+#}
 
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "devlaunch-ec2-profile"
   role = aws_iam_role.ec2_role.name
 }
 
+data "aws_vpc" "default" {
+  default = true
+}
+
+resource "aws_security_group" "ec2_ssh" {
+  name        = "devlaunch-ec2-ssh"
+  description = "Allow SSH access"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "devlaunch-ssh"
+  }
+}
+
 resource "aws_instance" "api_instance" {
-  ami                  = ""
-  instance_type        = "t2.micro"
-  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
-  key_name             = var.key_name
+  ami                    = "ami-02003f9f0fde924ea"
+  instance_type          = "t2.micro"
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  key_name               = "devops-key-eu-central"
+  vpc_security_group_ids = [aws_security_group.ec2_ssh.id]
 
   tags = {
     Name = "devlaunch-api"
   }
 }
 
-variable "key_name" {
-  description = "Name of the SSH key for EC2"
-}
 
 output "bucket_name" {
   value = aws_s3_bucket.templates_bucket.bucket
