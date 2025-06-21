@@ -2,9 +2,9 @@ import os
 import requests
 from urllib.parse import urljoin
 
-API_URL = ""
+API_URL = "http://ip-adress-of-ec2:5000/resolve"
 TEMPLATES_DIR = os.path.join(os.getcwd(), "templates", "scaffolds")
-BUCKET_NAME = "..."
+BUCKET_NAME = "devlaunch-templates-bucket"
 
 
 def download_template_logic(prompt: str) -> str:
@@ -18,22 +18,29 @@ def download_template_logic(prompt: str) -> str:
     if not matched:
         raise Exception("No template matched your prompt.")
 
-    template_name = matched.get("name") or matched.get(
-        "url").rstrip("/").split("/")[-1]
+    template_url = matched.get("url", "")
+    template_name = matched.get("name")
+    if not template_name:
+        template_name = os.path.dirname(template_url.rstrip("/"))
+        if not template_name:
+            template_name = template_url.rstrip("/")
+
     local_dir = os.path.join(TEMPLATES_DIR, template_name)
     os.makedirs(local_dir, exist_ok=True)
 
-    url_prefix = matched.get("url", "")
-    if not url_prefix.endswith("/"):
-        url_prefix += "/"
+    prefix = os.path.dirname(template_url)
+    if not prefix.endswith("/"):
+        prefix += "/"
 
     for file_key in files:
-        relative_path = file_key[len(url_prefix):]
+        if not file_key.startswith(prefix):
+            raise Exception(f"Unexpected file key format: {file_key}")
+        relative_path = file_key[len(prefix):]
         local_path = os.path.join(local_dir, relative_path)
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
-        file_url = urljoin(
-            f"https://{BUCKET_NAME}.s3.amazonaws.com/", file_key)
+        file_url = f"{API_URL.replace('/resolve', '')}/download?key={file_key}"
+
         file_resp = requests.get(file_url)
         if file_resp.status_code == 200:
             with open(local_path, "wb") as f:
