@@ -27,10 +27,7 @@ def fetch_and_parse_template(key):
     if "tags" not in data:
         raise ValueError(f"Missing 'tags' in {key}")
 
-      return {
-        "tags": data["tags"],
-        "url": key
-    }
+    return {"tags": data["tags"], "url": key}
 
 
 def upload_file(key, data):
