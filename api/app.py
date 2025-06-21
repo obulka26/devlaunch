@@ -1,11 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
+from io import BytesIO
 import boto3
 import yaml
 import re
+import os
 
 app = Flask(__name__)
 
-BUCKET_NAME = ""
+BUCKET_NAME = "devlaunch-templates-bucket"
 INDEX_FILE_KEY = "index.yaml"
 TAGS_FILE_KEY = "tags.yaml"
 
@@ -53,12 +55,32 @@ def resolve():
         template_tags = set(entry.get("tags", []))
         if template_tags == input_tags:
             url = entry.get("url", "")
-            if not url.endswith("/"):
-                url += "/"
-            files = list_files_in_prefix(url)
+            prefix = os.path.dirname(url)
+            if prefix and not prefix.endswith("/"):
+                prefix += "/"
+            files = list_files_in_prefix(prefix)
             return jsonify({"matched": entry, "files": files})
 
     return jsonify({"matched": None})
+
+
+@app.route("/download", methods=["GET"])
+def download_file():
+    key = request.args.get("key")
+    if not key:
+        return jsonify({"error": "No key provided"}), 400
+
+    try:
+        obj = s3.get_object(Bucket=BUCKET_NAME, Key=key)
+        file_stream = BytesIO(obj["Body"].read())
+        file_stream.seek(0)
+        return send_file(
+            file_stream, as_attachment=True, download_name=os.path.basename(key)
+        )
+    except s3.exceptions.NoSuchKey:
+        return jsonify({"error": "File not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
