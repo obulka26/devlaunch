@@ -55,8 +55,7 @@ def generate(template: str):
 
 
 @app.command(
-    context_settings={"allow_extra_args": True,
-        "ignore_unknown_options": True},
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
     help="""
 
 🚀 [bold cyan]Create and start containers[/bold cyan] (wraps [italic]docker-compose[/italic])
@@ -241,8 +240,8 @@ def prompt():
 
 @app.command(help="⚙️ Configure your LLM provider for DevLaunch (OpenRouter or local)")
 def configure():
-    typer.echo(
-        "🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")    choice = input("Enter 1 or 2: ").strip()
+    typer.echo("🧠 [bold]Choose LLM Provider:[/bold]\n1) OpenRouter\n2) Local (Ollama)")
+    choice = input("Enter 1 or 2: ").strip()
     config = {}
 
     if choice == "1":
@@ -277,8 +276,8 @@ def configure():
     typer.echo(f"✅ Config saved to {CONFIG_PATH}")
 
 
-@app.command(help="📥 Download project resources  
-def download():
+@app.command(help="📥 Download project resources ")
+def download(prompt: str):
     try:
         path = download_template_logic(prompt)
         typer.secho(f"[✔] Template saved in {path}", fg=typer.colors.GREEN)
@@ -295,5 +294,4 @@ def clean():
 
 
 if __name__ == "__main__":
-    app()
     app()
