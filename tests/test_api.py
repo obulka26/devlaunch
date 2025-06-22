@@ -17,7 +17,7 @@ def client():
 # ---------------------- /resolve ----------------------
 
 
-@patch("app.s3")
+@patch("api.app.s3")
 def test_resolve_valid_prompt(mock_s3, client):
     # Mock tags.yaml and index.yaml
     mock_s3.get_object.side_effect = [
@@ -48,14 +48,14 @@ def test_resolve_valid_prompt(mock_s3, client):
     assert "files" in data
 
 
-@patch("app.s3")
+@patch("api.app.s3")
 def test_resolve_empty_prompt(mock_s3, client):
     res = client.post("/resolve", json={})
     assert res.status_code == 400
     assert res.get_json()["error"] == "No prompt provided"
 
 
-@patch("app.s3")
+@patch("api.app.s3")
 def test_resolve_no_match(mock_s3, client):
     mock_s3.get_object.side_effect = [
         {"Body": MagicMock(read=lambda: b"- docker\n- postgres")},
@@ -78,7 +78,7 @@ def test_resolve_no_match(mock_s3, client):
 # ---------------------- /download ----------------------
 
 
-@patch("app.s3")
+@patch("api.app.s3")
 def test_download_valid_key(mock_s3, client):
     mock_file = b"fake content"
     mock_s3.get_object.return_value = {"Body": MagicMock(read=lambda: mock_file)}
@@ -88,14 +88,14 @@ def test_download_valid_key(mock_s3, client):
     assert res.data == mock_file
 
 
-@patch("app.s3")
+@patch("api.app.s3")
 def test_download_no_key(mock_s3, client):
     res = client.get("/download")
     assert res.status_code == 400
     assert res.get_json()["error"] == "No key provided"
 
 
-@patch("app.s3")
+@patch("api.app.s3")
 def test_download_key_not_found(mock_s3, client):
     mock_s3.get_object.side_effect = mock_s3.exceptions.NoSuchKey = Exception(
         "KeyNotFound"
