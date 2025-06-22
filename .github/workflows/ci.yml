@@ -16,7 +16,7 @@ jobs:
           python-version: "3.12"
 
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        run: echo "PYTHONPATH=$PWD:$PWD/api" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
