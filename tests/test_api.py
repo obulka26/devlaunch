@@ -6,7 +6,7 @@ import pytest
 sys.modules["boto3"] = MagicMock()
 
 
-from app import app
+from api.app import app
 
 @pytest.fixture
 def client():
