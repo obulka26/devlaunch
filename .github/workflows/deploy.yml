@@ -19,3 +19,31 @@ jobs:
           terraform validate
           terraform apply -auto-approve
 
+  ansible:
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass python3-pip
+          pip install ansible
+
+      - name: Set up SSH private key
+        run: |
+          export SSH_KEY_PATH="$HOME/.ssh/devops-key-eu-central.pem"
+          mkdir -p "$(dirname "$SSH_KEY_PATH")"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > "$SSH_KEY_PATH"
+          chmod 600 "$SSH_KEY_PATH"
+          echo -e "Host *\n\tStrictHostKeyChecking no\n\tIdentityFile $SSH_KEY_PATH\n" > ~/.ssh/config
+
+      - name: Run Ansible playbook
+        run: |
+          cd ansible
+          cat hosts.ini  # for debug
+          ansible-playbook -i hosts.ini playbook.yml
