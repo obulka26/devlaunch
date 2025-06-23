@@ -41,7 +41,8 @@ jobs:
       - name: Build and Push Docker image for EC2 Ubuntu 24.04 (x86_64)
         run: |
           docker buildx build \
+            --file api/Dockerfile \
             --platform linux/amd64 \
             -t olegbulka/public-repo:devlaunch-api-1.0-amd64 \
-            --push .
-
+            --push \
+            api
