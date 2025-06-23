@@ -6,18 +6,24 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    outputs:
+      ec2_ip: ${{ steps.output.outputs.ec2_public_ip }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init & Apply
+      - name: Terraform Init, Apply & Output
+        id: output
         run: |
           cd infra
           terraform init
           terraform validate
           terraform apply -auto-approve
+          echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+
+
 
   ansible:
     needs: terraform
@@ -25,6 +31,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
+      - name: Create dynamic inventory
+        run: |
+          echo "[web]" > hosts.ini
+          echo "${{ needs.terraform.outputs.ec2_ip }}" >> hosts.ini
+
       - name: Checkout code
         uses: actions/checkout@v4
 
