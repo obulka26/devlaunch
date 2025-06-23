@@ -1,0 +1,57 @@
+- name: Deploy DevLaunch App on EC2
+  hosts: ec2
+  become: true
+
+  vars:
+    python_version: "3.12"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+
+    - name: Install dependencies
+      apt:
+        name:
+          - docker.io
+          - python3-pip
+          - python3-venv
+        state: present
+
+    - name: Install Python packages
+      pip:
+        name:
+          - boto3
+          - pyyaml
+
+    - name: Copy script to EC2
+      copy:
+        src: ../server/indexer.py
+        dest: /home/ubuntu/indexer.py
+        mode: '0755'
+
+    - name: Run Python script
+      command: python3 /home/ubuntu/generate_index.py
+
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull Docker image
+      docker_image:
+        name: olegbulka/public-repo
+        tag: devlaunch-api-1.0-amd64
+        source: pull
+
+    - name: Run Docker container
+      docker_container:
+        name: flaskapp
+        image: olegbulka/public-repo:devlaunch-api-1.0-amd64
+        state: started
+        restart_policy: always
+        ports:
+          - "5000:5000"
