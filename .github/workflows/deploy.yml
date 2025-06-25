@@ -37,7 +37,7 @@ jobs:
           mv backend.tf.bak backend.tf
 
           # migrate state to S3
-          terraform init -migrate-state
+          echo "yes" | terraform init -migrate-state
 
 
   ansible:
