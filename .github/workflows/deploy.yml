@@ -38,8 +38,9 @@ jobs:
     steps:
       - name: Create dynamic inventory
         run: |
-          echo "[web]" > hosts.ini
-          echo "${{ needs.terraform.outputs.ec2_ip }}" >> hosts.ini
+          mkdir -p ansible
+          echo "[web]" > ansible/hosts.ini
+          echo "${{ needs.terraform.outputs.ec2_ip }}" >> ansible/hosts.ini
 
       - name: Checkout code
         uses: actions/checkout@v4
