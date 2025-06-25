@@ -23,11 +23,21 @@ jobs:
         id: output
         run: |
           cd infra
+
+          # temporarily move backend.tf
+          mv backend.tf backend.tf.bak
+
           terraform init
           terraform validate
           terraform apply -auto-approve
+
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
 
+          # restore backend.tf
+          mv backend.tf.bak backend.tf
+
+          # migrate state to S3
+          terraform init -migrate-state
 
 
   ansible:
