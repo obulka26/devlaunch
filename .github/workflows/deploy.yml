@@ -46,14 +46,15 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Create dynamic inventory
         run: |
           mkdir -p ansible
           echo "[web]" > ansible/hosts.ini
           echo "${{ needs.terraform.outputs.ec2_ip }}" >> ansible/hosts.ini
 
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
