@@ -23,6 +23,7 @@ jobs:
       - name: Migrate tfstate from S3 backend to local
         run: |
           cd infra
+          terraform init
           cp backend.tf backend.tf.bak
 
           cat > backend.tf <<EOF
