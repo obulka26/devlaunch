@@ -53,8 +53,7 @@ jobs:
         run: |
           mkdir -p ansible
           echo "[web]" > ansible/hosts.ini
-          echo "${{ needs.terraform.outputs.ec2_ip }}" >> ansible/hosts.ini
-
+          echo "${{ needs.terraform.outputs.ec2_ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/devops-key-eu-central.pem" >> ansible/hosts.ini
 
       - name: Install dependencies
         run: |
