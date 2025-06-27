@@ -38,4 +38,5 @@ jobs:
 
       - name: Terraform Destroy
         run: |
+          cd infra
           terraform destroy -auto-approve
